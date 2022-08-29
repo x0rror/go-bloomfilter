@@ -5,14 +5,14 @@ import (
 	"github.com/x0rworld/go-bloomfilter/bitmap"
 )
 
-// locationFunc returns hash locations based on data and k
+// locationFunc returns hash locations based on data and k.
 type locationFunc func(data []byte, k uint) []uint64
 
 type BloomFilter struct {
 	bitmap bitmap.Bitmap
-	// m: number of bit in bloom filter
+	// m is the number of bit in bloom filter.
 	m uint64
-	// k: number of hash function
+	// k is the number of hash function.
 	k        uint64
 	location locationFunc
 }

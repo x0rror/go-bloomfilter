@@ -66,6 +66,7 @@ func (r *Redis) SetExpireTTL(d time.Duration) error {
 	return nil
 }
 
+// NewRedis returns bitmap that is store into redis and manipulated via github.com/go-redis/redis.
 func NewRedis(client *redis.Client, key string, m uint64) *Redis {
 	r := &Redis{
 		client: client,

@@ -1,3 +1,4 @@
+// Package filter manipulates bitmap to check and add the element.
 package filter
 
 import "github.com/x0rworld/go-bloomfilter/bitmap"

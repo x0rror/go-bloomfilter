@@ -25,6 +25,7 @@ func (l *Local) SetBits(locs []uint64) error {
 	return nil
 }
 
+// NewLocal returns in-memory bitmap which is backed by github.com/bits-and-blooms/bitset.
 func NewLocal(m uint64) *Local {
 	return &Local{
 		bs: bitset.New(uint(m)),

@@ -1,3 +1,4 @@
+// Package config is used to generate filter by factory.
 package config
 
 import (
@@ -38,9 +39,9 @@ func NewDefaultFactoryConfig() FactoryConfig {
 
 type FilterConfig struct {
 	BitmapConfig BitmapConfig
-	// M: number of bit in bloom filter
+	// M is the number of bit in bloom filter.
 	M uint64
-	// K: number of hash function
+	// K is the number of hash function.
 	K uint64
 }
 

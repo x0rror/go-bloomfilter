@@ -1,3 +1,4 @@
+// Package factory is used to generate filter.
 package factory
 
 import (
@@ -10,6 +11,7 @@ import (
 )
 
 type Factory interface {
+	// NewFilter generates filter.
 	NewFilter(ctx context.Context) (filter.Filter, error)
 }
 
@@ -17,9 +19,9 @@ type BloomFilterFactory struct {
 	cfg config.FactoryConfig
 }
 
-// NewFilter returns filters depends on config.FactoryConfig
-// if bitmap is not recognized, return BloomFilter with bitmap.Local by default which manipulates in-memory bitset
-func (f *BloomFilterFactory) NewFilter(_ context.Context) (filter.Filter, error) {
+// NewFilter returns filters depends on config.FactoryConfig.
+// If bitmap is not recognized, return BloomFilter with bitmap.Local by default which manipulates in-memory bitset.
+func (f *BloomFilterFactory) NewFilter(ctx context.Context) (filter.Filter, error) {
 	var bm bitmap.Bitmap
 	switch f.cfg.FilterConfig.BitmapConfig.Type {
 	case config.BitmapTypeRedis:
