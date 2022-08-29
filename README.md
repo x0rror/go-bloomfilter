@@ -3,8 +3,7 @@
 ![build workflow](https://github.com/x0rworld/go-bloomfilter/actions/workflows/go.yml/badge.svg)
 [![Go Reference](https://pkg.go.dev/badge/github.com/x0rworld/go-bloomfilter.svg)](https://pkg.go.dev/github.com/x0rworld/go-bloomfilter)
 
-[go-bloomfilter] is a bloomfilter implemented by Golang which supports in-memory and Redis. Also, it supports rotation
-by period.
+[go-bloomfilter] is implemented by Golang which supports in-memory and Redis. Moreover, it’s available for a duration-based rotation.
 
 ## Resources
 
