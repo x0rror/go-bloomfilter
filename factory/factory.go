@@ -30,7 +30,7 @@ func (f *BloomFilterFactory) NewFilter(ctx context.Context) (filter.Filter, erro
 			ReadTimeout:  f.cfg.RedisConfig.Timeout,
 			WriteTimeout: f.cfg.RedisConfig.Timeout,
 		})
-		bm = bitmap.NewRedis(client, f.cfg.RedisConfig.Key, f.cfg.FilterConfig.M)
+		bm = bitmap.NewRedis(ctx, client, f.cfg.RedisConfig.Key, f.cfg.FilterConfig.M)
 	default:
 		bm = bitmap.NewLocal(f.cfg.FilterConfig.M)
 	}
@@ -47,8 +47,8 @@ func (f *RotatorFactory) NewFilter(ctx context.Context) (filter.Filter, error) {
 	return rotator.NewRotator(ctx, f.cfg.RotatorConfig, f.base.NewFilter)
 }
 
-// NewFilterFactory does config validation before return Factory based on config.FactoryConfig.
-// Return RotatorFactory if rotator is enabled in config.FactoryConfig, otherwise return BloomFilterFactory.
+// NewFilterFactory does config validation with config.FactoryConfig before return Factory.
+// Returns RotatorFactory if rotator is enabled specified within config.FactoryConfig, otherwise return BloomFilterFactory.
 func NewFilterFactory(fCfg config.FactoryConfig) (Factory, error) {
 	// validate config
 	if err := fCfg.Validate(); err != nil {

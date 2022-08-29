@@ -64,12 +64,13 @@ func TestRedis_CheckBits(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			client := miniredis.RunT(t)
 			r := &Redis{
+				ctx:    context.Background(),
 				client: redis.NewClient(&redis.Options{Addr: client.Addr()}),
 				key:    tt.fields.key,
 				m:      tt.fields.m,
 			}
 			if tt.doSetBits {
-				r.SetBits(tt.args.locs)
+				_ = r.SetBits(tt.args.locs)
 			}
 			got, err := r.CheckBits(tt.args.locs)
 			if (err != nil) != tt.wantErr {
@@ -94,6 +95,7 @@ func TestSetRedisExpireTTL(t *testing.T) {
 	client.SetBit(context.Background(), key, 0, 0)
 
 	r := &Redis{
+		ctx:    context.Background(),
 		client: client,
 		key:    key,
 		m:      10,
@@ -113,7 +115,8 @@ func TestNewRedis(t *testing.T) {
 
 	key := "test-NewRedis"
 	client := redis.NewClient(&redis.Options{Addr: m.Addr()})
-	r := NewRedis(client, key, 10)
+	ctx := context.Background()
+	r := NewRedis(ctx, client, key, 10)
 	// assert r.key is modified by NewRedis as `{key}_{NanoTime}`
 	assert.Contains(t, r.key, fmt.Sprintf("%s_", key))
 
