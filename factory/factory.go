@@ -21,7 +21,7 @@ type BloomFilterFactory struct {
 }
 
 // NewFilter returns filters depends on config.FactoryConfig.
-// If bitmap is not recognized, return BloomFilter with bitmap.Local by default which manipulates in-memory bitset.
+// If bitmap is not recognized, return BloomFilter with bitmap.InMemory by default which manipulates in-memory bitmap.
 func (f *BloomFilterFactory) NewFilter(ctx context.Context) (filter.Filter, error) {
 	var bm bitmap.Bitmap
 	var err error
@@ -49,7 +49,7 @@ func (f *BloomFilterFactory) NewFilter(ctx context.Context) (filter.Filter, erro
 			return nil, err
 		}
 	default:
-		bm = bitmap.NewLocal(f.cfg.FilterConfig.M)
+		bm = bitmap.NewInMemory(f.cfg.FilterConfig.M)
 	}
 	return filter.NewBloomFilter(bm, f.cfg.FilterConfig.M, f.cfg.FilterConfig.K), nil
 }

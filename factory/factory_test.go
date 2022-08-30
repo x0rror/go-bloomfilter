@@ -15,7 +15,7 @@ func TestNewFilterFactory(t *testing.T) {
 	cfg := config.FactoryConfig{
 		FilterConfig: config.FilterConfig{
 			BitmapConfig: config.BitmapConfig{
-				Type: config.BitmapTypeBitSet,
+				Type: config.BitmapTypeInMemory,
 			},
 			M: 100,
 			K: 3,
@@ -28,7 +28,7 @@ func TestNewFilterFactory(t *testing.T) {
 	cfg = config.FactoryConfig{
 		FilterConfig: config.FilterConfig{
 			BitmapConfig: config.BitmapConfig{
-				Type: config.BitmapTypeBitSet,
+				Type: config.BitmapTypeInMemory,
 			},
 			M: 100,
 			K: 3,
@@ -46,7 +46,7 @@ func TestNewFilterFactory(t *testing.T) {
 	cfg = config.FactoryConfig{
 		FilterConfig: config.FilterConfig{
 			BitmapConfig: config.BitmapConfig{
-				Type: config.BitmapTypeBitSet,
+				Type: config.BitmapTypeInMemory,
 			},
 			M: 100,
 			K: 0, // invalid K
@@ -62,11 +62,11 @@ func TestNewFilterFactory(t *testing.T) {
 }
 
 func TestBloomFilterFactory_NewFilter(t *testing.T) {
-	// bitmap: bitset
+	// bitmap: in-memory
 	cfg := config.FactoryConfig{
 		FilterConfig: config.FilterConfig{
 			BitmapConfig: config.BitmapConfig{
-				Type: config.BitmapTypeBitSet,
+				Type: config.BitmapTypeInMemory,
 			},
 			M: 100,
 			K: 3,
@@ -80,7 +80,7 @@ func TestBloomFilterFactory_NewFilter(t *testing.T) {
 	assert.NoError(t, err)
 	assert.IsType(t, &filter.BloomFilter{}, f)
 	bf := f.(*filter.BloomFilter)
-	assert.IsType(t, &bitmap.Local{}, bf.BitMap)
+	assert.IsType(t, &bitmap.InMemory{}, bf.BitMap)
 
 	// bitmap: redis
 	cfg = config.FactoryConfig{
@@ -111,7 +111,7 @@ func TestBloomFilterFactory_NewFilter(t *testing.T) {
 	cfg = config.FactoryConfig{
 		FilterConfig: config.FilterConfig{
 			BitmapConfig: config.BitmapConfig{
-				Type: config.BitmapTypeBitSet,
+				Type: config.BitmapTypeInMemory,
 			},
 			M: 100,
 			K: 3,
@@ -131,5 +131,5 @@ func TestBloomFilterFactory_NewFilter(t *testing.T) {
 	r := f.(*rotator.Rotator)
 	assert.IsType(t, &filter.BloomFilter{}, r.Current)
 	bf = r.Current.(*filter.BloomFilter)
-	assert.IsType(t, &bitmap.Local{}, bf.BitMap)
+	assert.IsType(t, &bitmap.InMemory{}, bf.BitMap)
 }
