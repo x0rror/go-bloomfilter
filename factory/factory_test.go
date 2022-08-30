@@ -5,6 +5,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/x0rworld/go-bloomfilter/bitmap"
 	"github.com/x0rworld/go-bloomfilter/config"
+	"github.com/x0rworld/go-bloomfilter/filter"
+	"github.com/x0rworld/go-bloomfilter/filter/rotator"
 	"testing"
 	"time"
 )
@@ -70,13 +72,15 @@ func TestBloomFilterFactory_NewFilter(t *testing.T) {
 			K: 3,
 		},
 	}
-	bloomFilterFactory, err := NewFilterFactory(cfg)
+	ff, err := NewFilterFactory(cfg)
 	assert.NoError(t, err)
-	assert.IsType(t, &BloomFilterFactory{}, bloomFilterFactory)
+	assert.IsType(t, &BloomFilterFactory{}, ff)
 
-	filter, err := bloomFilterFactory.NewFilter(context.Background())
+	f, err := ff.NewFilter(context.Background())
 	assert.NoError(t, err)
-	assert.IsType(t, &bitmap.Local{}, filter.GetBitmap())
+	assert.IsType(t, &filter.BloomFilter{}, f)
+	bf := f.(*filter.BloomFilter)
+	assert.IsType(t, &bitmap.Local{}, bf.BitMap)
 
 	// bitmap: redis
 	cfg = config.FactoryConfig{
@@ -93,13 +97,15 @@ func TestBloomFilterFactory_NewFilter(t *testing.T) {
 			Key:     "test",
 		},
 	}
-	bloomFilterFactory, err = NewFilterFactory(cfg)
+	ff, err = NewFilterFactory(cfg)
 	assert.NoError(t, err)
-	assert.IsType(t, &BloomFilterFactory{}, bloomFilterFactory)
+	assert.IsType(t, &BloomFilterFactory{}, ff)
 
-	filter, err = bloomFilterFactory.NewFilter(context.Background())
+	f, err = ff.NewFilter(context.Background())
 	assert.NoError(t, err)
-	assert.IsType(t, &bitmap.Redis{}, filter.GetBitmap())
+	assert.IsType(t, &filter.BloomFilter{}, f)
+	bf = f.(*filter.BloomFilter)
+	assert.IsType(t, &bitmap.Redis{}, bf.BitMap)
 
 	// rotator: enabled
 	cfg = config.FactoryConfig{
@@ -115,11 +121,15 @@ func TestBloomFilterFactory_NewFilter(t *testing.T) {
 			Freq:   3 * time.Second,
 		},
 	}
-	bloomFilterFactory, err = NewFilterFactory(cfg)
+	ff, err = NewFilterFactory(cfg)
 	assert.NoError(t, err)
-	assert.IsType(t, &RotatorFactory{}, bloomFilterFactory)
+	assert.IsType(t, &RotatorFactory{}, ff)
 
-	filter, err = bloomFilterFactory.NewFilter(context.Background())
+	f, err = ff.NewFilter(context.Background())
 	assert.NoError(t, err)
-	assert.IsType(t, &bitmap.Local{}, filter.GetBitmap())
+	assert.IsType(t, &rotator.Rotator{}, f)
+	r := f.(*rotator.Rotator)
+	assert.IsType(t, &filter.BloomFilter{}, r.Current)
+	bf = r.Current.(*filter.BloomFilter)
+	assert.IsType(t, &bitmap.Local{}, bf.BitMap)
 }

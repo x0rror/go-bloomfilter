@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+type RedisOption func(*Redis) error
+
 type Redis struct {
 	ctx    context.Context
 	client *redis.Client
@@ -56,25 +58,35 @@ func (r *Redis) SetBits(locs []uint64) error {
 	return nil
 }
 
-func (r *Redis) SetExpireTTL(d time.Duration) error {
-	res := r.client.Expire(r.ctx, r.key, d)
-	_, err := res.Result()
-	if err != nil {
-		return err
+// RedisSetExpireTTL sets expiry TTL with d.
+func RedisSetExpireTTL(d time.Duration) RedisOption {
+	return func(r *Redis) error {
+		res := r.client.Expire(r.ctx, r.key, d)
+		_, err := res.Result()
+		if err != nil {
+			return err
+		}
+		return nil
 	}
-	return nil
 }
 
 // NewRedis returns bitmap that is store into redis and manipulated via github.com/go-redis/redis.
-func NewRedis(ctx context.Context, client *redis.Client, key string, m uint64) *Redis {
+func NewRedis(ctx context.Context, client *redis.Client, key string, m uint64, opts ...RedisOption) (*Redis, error) {
 	r := &Redis{
 		ctx:    ctx,
 		client: client,
 		key:    fmt.Sprintf("%s_%d", key, time.Now().UnixNano()),
 		m:      m,
 	}
-	// Set the empty bitmap with the key in Redis.
-	// Also, when Rotator applies Redis as bitmap, it will cause failure with setting expiry if the key is not in Redis in prior.
+	// Set the empty bitmap with the key in Redis to avoid subsequent Redis operations might be ineffective such as expiry setting.
 	r.client.SetBit(r.ctx, r.key, 0, 0)
-	return r
+
+	for _, opt := range opts {
+		err := opt(r)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return r, nil
 }
