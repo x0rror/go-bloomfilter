@@ -3,7 +3,6 @@ package factory
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
-	"github.com/x0rworld/go-bloomfilter/bitmap"
 	"github.com/x0rworld/go-bloomfilter/config"
 	"github.com/x0rworld/go-bloomfilter/filter"
 	"github.com/x0rworld/go-bloomfilter/filter/rotator"
@@ -43,6 +42,8 @@ func TestNewFilterFactory(t *testing.T) {
 	f, err = NewFilterFactory(cfg)
 	assert.NoError(t, err)
 	assert.IsType(t, &RotatorFactory{}, f)
+	rf := f.(*RotatorFactory)
+	assert.IsType(t, &BloomFilterFactory{}, rf.base)
 
 	// invalid config
 	cfg = config.FactoryConfig{
@@ -64,53 +65,41 @@ func TestNewFilterFactory(t *testing.T) {
 }
 
 func TestBloomFilterFactory_NewFilter(t *testing.T) {
-	// bitmap: in-memory
-	cfg := config.FactoryConfig{
-		FilterConfig: config.FilterConfig{
-			BitmapConfig: config.BitmapConfig{
-				Type: config.BitmapTypeInMemory,
+	// error
+	ff := &BloomFilterFactory{
+		cfg: config.FactoryConfig{
+			FilterConfig: config.FilterConfig{
+				BitmapConfig: config.BitmapConfig{
+					Type: config.BitmapTypeInMemory,
+				},
+				M: 0, // invalid
+				K: 3,
 			},
-			M: 100,
-			K: 3,
 		},
 	}
-	ff, err := NewFilterFactory(cfg)
-	assert.NoError(t, err)
-	assert.IsType(t, &BloomFilterFactory{}, ff)
-
 	f, err := ff.NewFilter(context.Background())
-	assert.NoError(t, err)
-	assert.IsType(t, &filter.BloomFilter{}, f)
-	bf := f.(*filter.BloomFilter)
-	assert.IsType(t, &bitmap.InMemory{}, bf.BitMap)
+	assert.Error(t, err)
+	assert.Nil(t, f)
 
-	// bitmap: redis
-	cfg = config.FactoryConfig{
-		FilterConfig: config.FilterConfig{
-			BitmapConfig: config.BitmapConfig{
-				Type: config.BitmapTypeRedis,
+	// without error
+	ff = &BloomFilterFactory{
+		cfg: config.FactoryConfig{
+			FilterConfig: config.FilterConfig{
+				BitmapConfig: config.BitmapConfig{
+					Type: config.BitmapTypeInMemory,
+				},
+				M: 100,
+				K: 3,
 			},
-			M: 100,
-			K: 3,
-		},
-		RedisConfig: config.RedisConfig{
-			Addr:    "localhost:6379",
-			Timeout: 3 * time.Second,
-			Key:     "test",
 		},
 	}
-	ff, err = NewFilterFactory(cfg)
-	assert.NoError(t, err)
-	assert.IsType(t, &BloomFilterFactory{}, ff)
-
 	f, err = ff.NewFilter(context.Background())
 	assert.NoError(t, err)
 	assert.IsType(t, &filter.BloomFilter{}, f)
-	bf = f.(*filter.BloomFilter)
-	assert.IsType(t, &bitmap.Redis{}, bf.BitMap)
+}
 
-	// rotator: enabled
-	cfg = config.FactoryConfig{
+func TestRotatorFactory_NewFilter(t *testing.T) {
+	cfg := config.FactoryConfig{
 		FilterConfig: config.FilterConfig{
 			BitmapConfig: config.BitmapConfig{
 				Type: config.BitmapTypeInMemory,
@@ -123,15 +112,13 @@ func TestBloomFilterFactory_NewFilter(t *testing.T) {
 			Freq:   3 * time.Second,
 		},
 	}
-	ff, err = NewFilterFactory(cfg)
+	base, err := NewFilterFactory(cfg)
 	assert.NoError(t, err)
-	assert.IsType(t, &RotatorFactory{}, ff)
-
-	f, err = ff.NewFilter(context.Background())
+	rf := &RotatorFactory{
+		cfg:  cfg,
+		base: base,
+	}
+	f, err := rf.NewFilter(context.Background())
 	assert.NoError(t, err)
 	assert.IsType(t, &rotator.Rotator{}, f)
-	r := f.(*rotator.Rotator)
-	assert.IsType(t, &filter.BloomFilter{}, r.Current)
-	bf = r.Current.(*filter.BloomFilter)
-	assert.IsType(t, &bitmap.InMemory{}, bf.BitMap)
 }
