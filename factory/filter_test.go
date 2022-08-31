@@ -12,6 +12,7 @@ import (
 )
 
 func TestNewFilterFactory(t *testing.T) {
+	// valid: bloomfilter
 	cfg := config.FactoryConfig{
 		FilterConfig: config.FilterConfig{
 			BitmapConfig: config.BitmapConfig{
@@ -25,6 +26,7 @@ func TestNewFilterFactory(t *testing.T) {
 	assert.NoError(t, err)
 	assert.IsType(t, &BloomFilterFactory{}, f)
 
+	// valid: rotator filter
 	cfg = config.FactoryConfig{
 		FilterConfig: config.FilterConfig{
 			BitmapConfig: config.BitmapConfig{

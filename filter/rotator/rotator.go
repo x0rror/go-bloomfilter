@@ -9,7 +9,8 @@ import (
 	"time"
 )
 
-// NewFilterFunc returns filter that will be performed by Rotator in rotation.
+// NewFilterFunc returns filter that will be performed by Rotator in handleRotating.
+// It's the same signature with factory.FilterFactory.NewFilter.
 type NewFilterFunc func(ctx context.Context) (filter.Filter, error)
 
 type Rotator struct {
@@ -35,9 +36,10 @@ func (r *Rotator) rotate() error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
+	var err error
 	r.Current = r.Next
-	r.Next, _ = r.newFilter(r.ctx)
-	return nil
+	r.Next, err = r.newFilter(r.ctx)
+	return err
 }
 
 func (r *Rotator) Exist(data string) (bool, error) {
