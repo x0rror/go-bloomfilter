@@ -96,5 +96,5 @@ func genDefaultRotator() *Rotator {
 }
 
 func newFilter(_ context.Context) (filter.Filter, error) {
-	return filter.NewBloomFilter(bitmap.NewLocal(100), 100, 3), nil
+	return filter.NewBloomFilter(bitmap.NewInMemory(100), 100, 3), nil
 }

@@ -21,7 +21,7 @@ func TestFactoryConfig_Validate(t *testing.T) {
 			fields: fields{
 				FilterConfig: FilterConfig{
 					BitmapConfig: BitmapConfig{
-						BitmapTypeBitSet,
+						BitmapTypeInMemory,
 					},
 					M: 100,
 					K: 2,
@@ -34,7 +34,7 @@ func TestFactoryConfig_Validate(t *testing.T) {
 			fields: fields{
 				FilterConfig: FilterConfig{
 					BitmapConfig: BitmapConfig{
-						BitmapTypeBitSet,
+						BitmapTypeInMemory,
 					},
 					M: 0,
 					K: 2,
@@ -132,7 +132,7 @@ func TestFactoryConfig_Validate(t *testing.T) {
 			fields: fields{
 				FilterConfig: FilterConfig{
 					BitmapConfig: BitmapConfig{
-						BitmapTypeBitSet,
+						BitmapTypeInMemory,
 					},
 					M: 100,
 					K: 2,

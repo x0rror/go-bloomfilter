@@ -61,20 +61,23 @@ func main() {
 	if err != nil {
 		log.Println(err)
 		return
-	}
-	log.Printf("data: %v, exist: %v\n", data, exist)
+	} 
+	// data: hello world, exist: false
+	log.Printf("data: %v, exist: %v\n", data, exist) 
 	err = f.Add(data)
 	if err != nil {
 		log.Println(err)
 		return
-	}
-	log.Printf("add data: %s\n", data)
+	} 
+	// add data: hello world
+	log.Printf("add data: %s\n", data) 
 	exist, err = f.Exist(data)
 	if err != nil {
 		log.Println(err)
 		return
-	}
-	log.Printf("data: %v, exist: %v\n", data, exist)
+	} 
+	// data: hello world, exist: true
+	log.Printf("data: %v, exist: %v\n", data, exist) 
 }
 ```
 

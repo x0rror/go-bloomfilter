@@ -8,14 +8,14 @@ import (
 )
 
 const (
-	BitmapTypeBitSet BitmapType = "bitset"
-	BitmapTypeRedis  BitmapType = "redis"
+	BitmapTypeInMemory BitmapType = "in-memory"
+	BitmapTypeRedis    BitmapType = "redis"
 )
 
 var (
 	defaultFactoryConfig = FactoryConfig{
 		FilterConfig: FilterConfig{
-			BitmapConfig: BitmapConfig{Type: BitmapTypeBitSet},
+			BitmapConfig: BitmapConfig{Type: BitmapTypeInMemory},
 			M:            256 * 1024 * 1024, // 256MiB
 			K:            3,
 		},
@@ -27,7 +27,7 @@ type BitmapType string
 
 func (b BitmapType) Validate() error {
 	switch b {
-	case BitmapTypeBitSet, BitmapTypeRedis:
+	case BitmapTypeInMemory, BitmapTypeRedis:
 		return nil
 	}
 	return ErrInvalidBitmapType

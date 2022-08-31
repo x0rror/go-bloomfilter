@@ -9,7 +9,7 @@ import (
 type locationFunc func(data []byte, k uint) []uint64
 
 type BloomFilter struct {
-	bitmap bitmap.Bitmap
+	BitMap bitmap.Bitmap
 	// m is the number of bit in bloom filter.
 	m uint64
 	// k is the number of hash function.
@@ -17,13 +17,9 @@ type BloomFilter struct {
 	location locationFunc
 }
 
-func (b *BloomFilter) GetBitmap() bitmap.Bitmap {
-	return b.bitmap
-}
-
 func (b *BloomFilter) Exist(data string) (bool, error) {
 	locs := b.location([]byte(data), uint(b.k))
-	exist, err := b.bitmap.CheckBits(locs)
+	exist, err := b.BitMap.CheckBits(locs)
 	if err != nil {
 		return false, err
 	}
@@ -32,7 +28,7 @@ func (b *BloomFilter) Exist(data string) (bool, error) {
 
 func (b *BloomFilter) Add(data string) error {
 	locs := b.location([]byte(data), uint(b.k))
-	err := b.bitmap.SetBits(locs)
+	err := b.BitMap.SetBits(locs)
 	if err != nil {
 		return err
 	}
@@ -41,7 +37,7 @@ func (b *BloomFilter) Add(data string) error {
 
 func NewBloomFilter(bitmap bitmap.Bitmap, m, k uint64) *BloomFilter {
 	return &BloomFilter{
-		bitmap:   bitmap,
+		BitMap:   bitmap,
 		m:        m,
 		k:        k,
 		location: bloom.Locations,

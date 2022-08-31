@@ -84,26 +84,18 @@ func TestRedis_CheckBits(t *testing.T) {
 	}
 }
 
-func TestSetRedisExpireTTL(t *testing.T) {
+func TestRedisSetExpireTTL(t *testing.T) {
 	m := miniredis.RunT(t)
 	defer m.Close()
 
-	key := "test-SetRedisExpireTTL"
+	key := "test-RedisSetExpireTTL"
 	ttl := 10 * time.Second
 	client := redis.NewClient(&redis.Options{Addr: m.Addr()})
-	// do setbit prior to set expiry to avoid unsuccessful call with EXPIRE due to non-existing key
-	client.SetBit(context.Background(), key, 0, 0)
 
-	r := &Redis{
-		ctx:    context.Background(),
-		client: client,
-		key:    key,
-		m:      10,
-	}
-	err := r.SetExpireTTL(ttl)
+	r, err := NewRedis(context.Background(), client, key, 10, RedisSetExpireTTL(ttl))
 	assert.NoError(t, err)
 
-	result := client.TTL(context.Background(), key)
+	result := client.TTL(context.Background(), r.key)
 	d, err := result.Result()
 	assert.NoError(t, err)
 	assert.Equal(t, ttl, d)
@@ -116,7 +108,8 @@ func TestNewRedis(t *testing.T) {
 	key := "test-NewRedis"
 	client := redis.NewClient(&redis.Options{Addr: m.Addr()})
 	ctx := context.Background()
-	r := NewRedis(ctx, client, key, 10)
+	r, err := NewRedis(ctx, client, key, 10)
+	assert.NoError(t, err)
 	// assert r.key is modified by NewRedis as `{key}_{NanoTime}`
 	assert.Contains(t, r.key, fmt.Sprintf("%s_", key))
 

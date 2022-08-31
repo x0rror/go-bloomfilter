@@ -20,7 +20,7 @@ func main() {
 
 	// setup factory
 	rotateFreq := 5 * time.Second
-	ff, err := genFactory(client, rotateFreq)
+	ff, err := genFilterFactory(client, rotateFreq)
 	if err != nil {
 		log.Println(err)
 		return
@@ -82,7 +82,7 @@ func main() {
 	log.Printf("dataHello: %q, exist: %v\n", dataHello, exist)
 }
 
-func genFactory(client *miniredis.Miniredis, rotateFreq time.Duration) (factory.Factory, error) {
+func genFilterFactory(client *miniredis.Miniredis, rotateFreq time.Duration) (factory.FilterFactory, error) {
 	return factory.NewFilterFactory(
 		config.FactoryConfig{
 			FilterConfig: config.FilterConfig{
