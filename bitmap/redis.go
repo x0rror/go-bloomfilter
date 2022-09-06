@@ -2,7 +2,6 @@ package bitmap
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-redis/redis/v8"
 	"time"
 )
@@ -70,16 +69,31 @@ func RedisSetExpireTTL(d time.Duration) RedisOption {
 	}
 }
 
+func (r *Redis) setEmptyBitmap() error {
+	res, err := r.client.Keys(r.ctx, r.key).Result()
+	if err != nil {
+		return err
+	}
+	if len(res) == 0 {
+		r.client.SetBit(r.ctx, r.key, 0, 0)
+	}
+	return nil
+}
+
 // NewRedis returns bitmap that is store into redis and manipulated via github.com/go-redis/redis.
 func NewRedis(ctx context.Context, client *redis.Client, key string, m uint64, opts ...RedisOption) (*Redis, error) {
 	r := &Redis{
 		ctx:    ctx,
 		client: client,
-		key:    fmt.Sprintf("%s_%d", key, time.Now().UnixNano()),
+		key:    key,
 		m:      m,
 	}
-	// Set the empty bitmap with the key in Redis to avoid subsequent Redis operations might be ineffective such as expiry setting.
-	r.client.SetBit(r.ctx, r.key, 0, 0)
+
+	// Set the empty bitmap with the r.key to avoid subsequent RedisOption might not be effective such as RedisSetExpireTTL.
+	err := r.setEmptyBitmap()
+	if err != nil {
+		return nil, err
+	}
 
 	for _, opt := range opts {
 		err := opt(r)
