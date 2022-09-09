@@ -98,6 +98,7 @@ func genFilterFactory(client *miniredis.Miniredis, rotateFreq time.Duration) (fa
 			RotatorConfig: config.RotatorConfig{
 				Enable: true,
 				Freq:   rotateFreq,
+				Mode:   config.RotatorModeTruncatedTime,
 			},
 		},
 	)

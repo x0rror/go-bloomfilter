@@ -2,7 +2,6 @@ package bitmap
 
 import (
 	"context"
-	"fmt"
 	"github.com/alicebob/miniredis/v2"
 	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
@@ -108,14 +107,11 @@ func TestNewRedis(t *testing.T) {
 	key := "test-NewRedis"
 	client := redis.NewClient(&redis.Options{Addr: m.Addr()})
 	ctx := context.Background()
-	r, err := NewRedis(ctx, client, key, 10)
+	_, err := NewRedis(ctx, client, key, 10)
 	assert.NoError(t, err)
-	// assert r.key is modified by NewRedis as `{key}_{NanoTime}`
-	assert.Contains(t, r.key, fmt.Sprintf("%s_", key))
 
-	result := client.Keys(context.Background(), fmt.Sprintf("%s_*", key))
+	result := client.Keys(context.Background(), key)
 	keys, err := result.Result()
 	assert.NoError(t, err)
-	// assert r.key was set to redis checked by Keys()
-	assert.Contains(t, keys[0], fmt.Sprintf("%s_", key))
+	assert.Contains(t, keys, key)
 }

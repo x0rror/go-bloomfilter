@@ -8,8 +8,10 @@ import (
 )
 
 const (
-	BitmapTypeInMemory BitmapType = "in-memory"
-	BitmapTypeRedis    BitmapType = "redis"
+	BitmapTypeInMemory       BitmapType  = "in-memory"
+	BitmapTypeRedis          BitmapType  = "redis"
+	RotatorModeDefault       RotatorMode = "default"
+	RotatorModeTruncatedTime RotatorMode = "truncated-time"
 )
 
 var (
@@ -20,7 +22,8 @@ var (
 			K:            3,
 		},
 	}
-	ErrInvalidBitmapType = errors.New("invalid bitmap type")
+	ErrInvalidBitmapType  = errors.New("invalid bitmap type")
+	ErrInvalidRotatorMode = errors.New("invalid rotator mode")
 )
 
 type BitmapType string
@@ -31,6 +34,16 @@ func (b BitmapType) Validate() error {
 		return nil
 	}
 	return ErrInvalidBitmapType
+}
+
+type RotatorMode string
+
+func (r RotatorMode) Validate() error {
+	switch r {
+	case RotatorModeDefault, RotatorModeTruncatedTime:
+		return nil
+	}
+	return ErrInvalidRotatorMode
 }
 
 func NewDefaultFactoryConfig() FactoryConfig {
@@ -87,6 +100,7 @@ func (c RedisConfig) Validate() error {
 
 type RotatorConfig struct {
 	Enable bool
+	Mode   RotatorMode
 	Freq   time.Duration
 }
 

@@ -13,9 +13,15 @@
 ## Features
 
 - [Supporting bitmap]
-    - in-memory: backed by [bits-and-blooms/bloom]
-    - redis: backed by [go-redis/redis]
+  - `InMemory`: backed by [bits-and-blooms/bloom]
+  - `Redis`: backed by [go-redis/redis]
 - [Rotation]
+  - Supports to manipulate the same key with Redis across multiple machines.
+    - `RotatorMode`
+      - `truncated-time`: manipulate key which is suffix with truncated time instead of current time, 
+                          which means whenever create the bitmap, it produces the same key in the same truncated time.
+        - e.g. now: `2022-09-06 08:24:31.35128`, freq: `3h`
+          - the key will be `go-bloomfilter_1662444000000000000`; `1662444000000000000` is unix timestamp of `2022-09-06 06:00:00`.
 
 ## Installation
 
@@ -38,7 +44,7 @@ import (
 
 func main() {
 	m, k := bloom.EstimateParameters(100, 0.01)
-	// configure factor config
+	// configure factory config
 	cfg := config.NewDefaultFactoryConfig()
 	// modify config
 	cfg.FilterConfig.M = uint64(m)
@@ -80,6 +86,8 @@ func main() {
 	log.Printf("data: %v, exist: %v\n", data, exist) 
 }
 ```
+
+More examples such as rotation could be found in [Examples].
 
 [go-bloomfilter]: https://github.com/x0rworld/go-bloomfilter
 

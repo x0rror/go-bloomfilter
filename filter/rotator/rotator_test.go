@@ -11,7 +11,7 @@ import (
 )
 
 func TestRotator_doRotation(t *testing.T) {
-	rotator := genDefaultRotator()
+	rotator := genRotator(t, genDefaultRotatorConfig())
 	data := "hello"
 	// check filter is empty
 	exist, err := rotator.Exist(data)
@@ -39,13 +39,13 @@ func TestRotator_doRotation(t *testing.T) {
 func TestRotator_Exist(t *testing.T) {
 	data := "hello"
 	// scenario 1: current & next don't have data, expect to get non-existing
-	rotator := genDefaultRotator()
+	rotator := genRotator(t, genDefaultRotatorConfig())
 	exist, err := rotator.Exist(data)
 	assert.NoError(t, err)
 	assert.Equal(t, false, exist)
 
 	// scenario 2: current does have data but next doesn't, expect to get existing
-	rotator = genDefaultRotator()
+	rotator = genRotator(t, genDefaultRotatorConfig())
 	err = rotator.current.Add(data)
 	assert.NoError(t, err)
 	exist, err = rotator.Exist(data)
@@ -53,7 +53,7 @@ func TestRotator_Exist(t *testing.T) {
 	assert.Equal(t, true, exist)
 
 	// scenario 3: next does have data but current doesn't, expect to get non-existing (this case should not happen)
-	rotator = genDefaultRotator()
+	rotator = genRotator(t, genDefaultRotatorConfig())
 	err = rotator.next.Add(data)
 	assert.NoError(t, err)
 	exist, err = rotator.Exist(data)
@@ -61,7 +61,7 @@ func TestRotator_Exist(t *testing.T) {
 	assert.Equal(t, false, exist)
 
 	// scenario 4: current & next do have data, expect to get existing
-	rotator = genDefaultRotator()
+	rotator = genRotator(t, genDefaultRotatorConfig())
 	err = rotator.current.Add(data)
 	assert.NoError(t, err)
 	err = rotator.next.Add(data)
@@ -72,7 +72,7 @@ func TestRotator_Exist(t *testing.T) {
 }
 
 func TestRotator_Add(t *testing.T) {
-	rotator := genDefaultRotator()
+	rotator := genRotator(t, genDefaultRotatorConfig())
 	data := "hello"
 	err := rotator.Add(data)
 	assert.NoError(t, err)
@@ -83,14 +83,17 @@ func TestRotator_Add(t *testing.T) {
 	assert.Equal(t, true, cExist && nExist)
 }
 
-func genDefaultRotator() *Rotator {
-	cfg := config.RotatorConfig{
+func genDefaultRotatorConfig() config.RotatorConfig {
+	return config.RotatorConfig{
 		Enable: true,
 		Freq:   3 * time.Second,
 	}
+}
+
+func genRotator(t *testing.T, cfg config.RotatorConfig) *Rotator {
 	rotator, err := NewRotator(context.Background(), cfg, newFilter)
 	if err != nil {
-		panic("failed to new default rotator")
+		t.Error("failed to new rotator")
 	}
 	return rotator
 }
