@@ -34,18 +34,18 @@ func (r *Rotator) handleRotating(ticker *time.Ticker) {
 }
 
 func (r *Rotator) rotate() error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
-	var err error
-	// replace current
-	r.current = r.next
-	// replace next
-	pair, err := genFilterPair(r.ctx, r.newFilter)
+	next, err := genNextFilter(r.ctx, r.newFilter)
 	if err != nil {
 		return err
 	}
-	r.next = pair.next
+
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	// replace current
+	r.current = r.next
+	// replace next
+	r.next = next
 	return err
 }
 
@@ -69,15 +69,23 @@ type filterPair struct {
 	current, next filter.Filter
 }
 
+func genNextFilter(ctx context.Context, newFilter NewFilterFunc) (filter.Filter, error) {
+	// pass the value to newFilter for distinguishing it's the next filter.
+	// currently, only factory.RedisBitmapFactory.NewBitmap refers to the value to generate key of bitmap.
+	nextCtx := context.WithValue(ctx, core.ContextKeyFactoryIsNextBm, true)
+	next, err := newFilter(nextCtx)
+	if err != nil {
+		return nil, err
+	}
+	return next, nil
+}
+
 func genFilterPair(ctx context.Context, newFilter NewFilterFunc) (*filterPair, error) {
 	current, err := newFilter(ctx)
 	if err != nil {
 		return nil, err
 	}
-	// pass the value to newFilter.
-	// currently, only factory.RedisBitmapFactory.NewBitmap refers to the value.
-	nextCtx := context.WithValue(ctx, core.ContextKeyFactoryIsNextBm, true)
-	next, err := newFilter(nextCtx)
+	next, err := genNextFilter(ctx, newFilter)
 	if err != nil {
 		return nil, err
 	}
