@@ -34,17 +34,18 @@ func (r *Rotator) handleRotating(ticker *time.Ticker) {
 }
 
 func (r *Rotator) rotate() error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
-	var err error
-	// replace current
-	r.current = r.next
-	// replace next
+	// only pair.next will be used in r.rotate()
 	pair, err := genFilterPair(r.ctx, r.newFilter)
 	if err != nil {
 		return err
 	}
+
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	// replace current
+	r.current = r.next
+	// replace next
 	r.next = pair.next
 	return err
 }
