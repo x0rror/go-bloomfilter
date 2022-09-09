@@ -17,10 +17,10 @@
   - `Redis`: backed by [go-redis/redis]
 - [Rotation]
   - Supports to manipulate the same key with Redis across multiple machines.
-    - `RotatorMode`
+    - [RotatorMode]
       - `truncated-time`: manipulate key which is suffix with truncated time instead of current time, 
-                          which means whenever create the bitmap, it produces the same key in the same truncated time.
-        - e.g. now: `2022-09-06 08:24:31.35128`, freq: `3h`
+                          which means whenever create the bitmap, it produces the same key of Redis bitmap in the same truncated time.
+        - e.g. current time: `2022-09-06 08:24:31.35128`, frequency of rotation: `3h`
           - the key will be `go-bloomfilter_1662444000000000000`; `1662444000000000000` is unix timestamp of `2022-09-06 06:00:00`.
 
 ## Installation
@@ -102,3 +102,5 @@ More examples such as rotation could be found in [Examples].
 [Supporting bitmap]: ./bitmap
 
 [Rotation]: ./filter/rotator
+
+[RotatorMode]: ./config/config.go
