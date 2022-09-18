@@ -22,10 +22,13 @@ type Rotator struct {
 	current, next filter.Filter
 }
 
-func (r *Rotator) handleRotating(ticker *time.Ticker) {
+func (r *Rotator) handleRotating(freq time.Duration) {
 	for {
+		current := time.Now()
+		next := current.Add(freq).Truncate(freq)
+		timer := time.NewTimer(next.Sub(current))
 		select {
-		case <-ticker.C:
+		case <-timer.C:
 			r.rotate()
 		case <-r.ctx.Done():
 			return
@@ -42,9 +45,7 @@ func (r *Rotator) rotate() error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	// replace current
 	r.current = r.next
-	// replace next
 	r.next = next
 	return err
 }
@@ -70,8 +71,8 @@ type filterPair struct {
 }
 
 func genNextFilter(ctx context.Context, newFilter NewFilterFunc) (filter.Filter, error) {
-	// pass the value to newFilter for distinguishing it's the next filter.
-	// currently, only factory.RedisBitmapFactory.NewBitmap refers to the value to generate key of bitmap.
+	// pass the context value to newFilter.
+	// currently, only RedisBitmapFactory.NewBitmap in BloomFilterFactory.NewFilter refers to the context value for generating bitmap.
 	nextCtx := context.WithValue(ctx, core.ContextKeyFactoryIsNextBm, true)
 	next, err := newFilter(nextCtx)
 	if err != nil {
@@ -111,7 +112,7 @@ func NewRotator(ctx context.Context, cfg config.RotatorConfig, newFilter NewFilt
 		next:      pair.next,
 	}
 
-	go r.handleRotating(time.NewTicker(cfg.Freq))
+	go r.handleRotating(cfg.Freq)
 
 	return r, nil
 }
