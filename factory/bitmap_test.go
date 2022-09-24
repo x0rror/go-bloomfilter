@@ -278,7 +278,6 @@ func TestRedisBitmapFactory_NewBitmap(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rf := &RedisBitmapFactory{
 				cfg: tt.fields.cfg,
-				now: fakeTimeFunc(),
 			}
 			got, err := rf.NewBitmap(tt.args.ctx)
 			if !tt.wantErr(t, err, fmt.Sprintf("NewBitmap(%v)", tt.args.ctx)) {

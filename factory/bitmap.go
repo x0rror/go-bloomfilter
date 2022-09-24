@@ -22,8 +22,6 @@ func (imf *InMemoryBitmapFactory) NewBitmap(_ context.Context) (bitmap.Bitmap, e
 
 type RedisBitmapFactory struct {
 	cfg config.FactoryConfig
-	// now is used to generate the key of bitmap.Redis if rotator is enabled.
-	now time.Time
 }
 
 // NewBitmap returns bitmap.Redis.
@@ -85,7 +83,7 @@ func NewBitmapFactory(cfg config.FactoryConfig) (BitmapFactory, error) {
 	}
 	switch cfg.FilterConfig.BitmapConfig.Type {
 	case config.BitmapTypeRedis:
-		return &RedisBitmapFactory{cfg: cfg, now: time.Now()}, nil
+		return &RedisBitmapFactory{cfg: cfg}, nil
 	default:
 		return &InMemoryBitmapFactory{cfg: cfg}, nil
 	}
