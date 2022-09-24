@@ -94,7 +94,7 @@ func assertKeyTTL(t *testing.T, mr *miniredis.Miniredis, key string, expDur time
 		}
 	}
 	if !matched {
-		assert.Fail(t, "no matched key to be checked with TTL.")
+		assert.Failf(t, "no matched key to be checked for TTL.", "check key: %s, but redis keys: %v", key, keys)
 	}
 }
 
@@ -178,10 +178,19 @@ func TestRedisBitmapFactory_NewBitmap(t *testing.T) {
 					RotatorConfig: config.RotatorConfig{
 						Enable: true,
 						Freq:   freq,
+						Mode:   config.RotatorModeDefault,
 					},
 				},
 			},
-			args:    args{ctx: context.Background()},
+			args: args{ctx: func() context.Context {
+				ctx := context.WithValue(context.Background(), core.BitmapFactoryCtxKey, core.BitmapFactoryCtxValue{
+					IsRotatorEnabled: true,
+					IsNextFilter:     false,
+					RotatorMode:      config.RotatorModeDefault,
+					Now:              fakeTimeFunc(),
+				})
+				return ctx
+			}()},
 			wantErr: assert.NoError,
 			expect: expect{
 				redisKey:    fmt.Sprintf("%s_%d", "test-RedisBitmapFactory_NewBitmap-rotatorIsEnabled", fakeTimeFunc().UnixNano()),
@@ -202,7 +211,7 @@ func TestRedisBitmapFactory_NewBitmap(t *testing.T) {
 					RedisConfig: config.RedisConfig{
 						Addr:    mr.Addr(),
 						Timeout: time.Second,
-						Key:     "test-RedisBitmapFactory_NewBitmap-rotatorIsEnabled-typeIsTruncatedTime",
+						Key:     "test-RedisBitmapFactory_NewBitmap-rotatorIsEnabled-modeIsTruncatedTime",
 					},
 					RotatorConfig: config.RotatorConfig{
 						Enable: true,
@@ -211,10 +220,18 @@ func TestRedisBitmapFactory_NewBitmap(t *testing.T) {
 					},
 				},
 			},
-			args:    args{ctx: context.Background()},
+			args: args{ctx: func() context.Context {
+				ctx := context.WithValue(context.Background(), core.BitmapFactoryCtxKey, core.BitmapFactoryCtxValue{
+					IsRotatorEnabled: true,
+					IsNextFilter:     false,
+					RotatorMode:      config.RotatorModeTruncatedTime,
+					Now:              fakeTimeFunc(),
+				})
+				return ctx
+			}()},
 			wantErr: assert.NoError,
 			expect: expect{
-				redisKey:    fmt.Sprintf("%s_%d", "test-RedisBitmapFactory_NewBitmap-rotatorIsEnabled-typeIsTruncatedTime", fakeTimeFunc().Truncate(freq).UnixNano()),
+				redisKey:    fmt.Sprintf("%s_%d", "test-RedisBitmapFactory_NewBitmap-rotatorIsEnabled-modeIsTruncatedTime", fakeTimeFunc().Truncate(freq).UnixNano()),
 				redisKeyTTL: freq*2 + 5*time.Minute,
 			},
 		},
@@ -232,7 +249,7 @@ func TestRedisBitmapFactory_NewBitmap(t *testing.T) {
 					RedisConfig: config.RedisConfig{
 						Addr:    mr.Addr(),
 						Timeout: time.Second,
-						Key:     "test-RedisBitmapFactory_NewBitmap-rotatorIsEnabled-typeIsTruncatedTime-validateNextBf",
+						Key:     "test-RedisBitmapFactory_NewBitmap-rotatorIsEnabled-modeIsTruncatedTime-validateNextBf",
 					},
 					RotatorConfig: config.RotatorConfig{
 						Enable: true,
@@ -242,13 +259,17 @@ func TestRedisBitmapFactory_NewBitmap(t *testing.T) {
 				},
 			},
 			args: args{ctx: func() context.Context {
-				ctx := context.Background()
-				ctx = context.WithValue(ctx, core.ContextKeyFactoryIsNextBm, true)
+				ctx := context.WithValue(context.Background(), core.BitmapFactoryCtxKey, core.BitmapFactoryCtxValue{
+					IsRotatorEnabled: true,
+					IsNextFilter:     true,
+					RotatorMode:      config.RotatorModeTruncatedTime,
+					Now:              fakeTimeFunc(),
+				})
 				return ctx
 			}()},
 			wantErr: assert.NoError,
 			expect: expect{
-				redisKey:    fmt.Sprintf("%s_%d", "test-RedisBitmapFactory_NewBitmap-rotatorIsEnabled-typeIsTruncatedTime-validateNextBf", fakeTimeFunc().Add(freq).Truncate(freq).UnixNano()),
+				redisKey:    fmt.Sprintf("%s_%d", "test-RedisBitmapFactory_NewBitmap-rotatorIsEnabled-modeIsTruncatedTime-validateNextBf", fakeTimeFunc().Add(freq).Truncate(freq).UnixNano()),
 				redisKeyTTL: freq*2 + 5*time.Minute,
 			},
 		},
@@ -257,7 +278,6 @@ func TestRedisBitmapFactory_NewBitmap(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rf := &RedisBitmapFactory{
 				cfg: tt.fields.cfg,
-				now: fakeTimeFunc(),
 			}
 			got, err := rf.NewBitmap(tt.args.ctx)
 			if !tt.wantErr(t, err, fmt.Sprintf("NewBitmap(%v)", tt.args.ctx)) {
@@ -265,6 +285,8 @@ func TestRedisBitmapFactory_NewBitmap(t *testing.T) {
 			}
 			assert.IsType(t, &bitmap.Redis{}, got)
 			assertKeyTTL(t, mr, tt.expect.redisKey, tt.expect.redisKeyTTL)
+
+			mr.FlushAll()
 		})
 	}
 }

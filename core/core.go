@@ -1,7 +1,19 @@
 package core
 
-type contextKey string
+import (
+	"github.com/x0rworld/go-bloomfilter/config"
+	"time"
+)
+
+type CtxKey string
 
 var (
-	ContextKeyFactoryIsNextBm = contextKey("factory-is-next-bitmap")
+	BitmapFactoryCtxKey = CtxKey("bitmap-factory-ctx-key")
 )
+
+type BitmapFactoryCtxValue struct {
+	IsRotatorEnabled bool
+	IsNextFilter     bool
+	RotatorMode      config.RotatorMode
+	Now              time.Time
+}
