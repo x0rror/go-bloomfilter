@@ -40,32 +40,37 @@ type RedisBitmapFactory struct {
 //     However, set gracefully additional 5 minutes here is preventing corner case just in case.
 //     For example, the bitmap of redis calls SetBits to operate expired bitset deleted by redis server before the rotation is performed.
 //
-// Besides, it refers to value of context.Context (key: core.ContextKeyFactoryIsNextBm). If the value is true means it should create the next time slot of bitmap.Redis.
-// Here adds the freq to current time to have key based on next time slot, then make sure the rotator manipulates current & next bitmaps of Redis would be expected.
+// Besides, it refers to value of context.Context (type is core.BitmapFactoryCtxValue) to generate key of bitmap and set expiry.
 //
 // For example, key: `go-bloomfilter`, current time is `2022-09-06 08:24:31.35128`; freq is `3h`:
 //
-// if 1) rotator is enabled, 2) rotator's mode is `truncated-time`
+// if 1) value.IsRotatorEnabled == true, 2) value.RotatorMode == config.RotatorModeTruncatedTime
 //
-// 3-1) core.ContextKeyFactoryIsNextBm is false, the key would be `go-bloomfilter_1662444000000000000`. (`1662444000000000000` is unix timestamp of `2022-09-06 06:00:00`.)
+// 3-1) value.IsNextFilter == false, the key of bitmap would be `go-bloomfilter_1662444000000000000`. (`1662444000000000000` is unix timestamp of `2022-09-06 06:00:00`.)
 //
-// 3-2) core.ContextKeyFactoryIsNextBm is true, the key would be `go-bloomfilter_1662454800000000000`. (`1662454800000000000` is unix timestamp of `2022-09-06 09:00:00`.)
+// 3-2) value.IsNextFilter == true, the key of bitmap would be `go-bloomfilter_1662454800000000000`. (`1662454800000000000` is unix timestamp of `2022-09-06 09:00:00`.)
 func (rf *RedisBitmapFactory) NewBitmap(ctx context.Context) (bitmap.Bitmap, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:         rf.cfg.RedisConfig.Addr,
 		ReadTimeout:  rf.cfg.RedisConfig.Timeout,
 		WriteTimeout: rf.cfg.RedisConfig.Timeout,
 	})
-	if rf.cfg.RotatorConfig.Enable {
-		now := rf.now
-		isNext, ok := ctx.Value(core.ContextKeyFactoryIsNextBm).(bool)
-		if ok && isNext {
+	val, ok := ctx.Value(core.BitmapFactoryCtxKey).(core.BitmapFactoryCtxValue)
+	if ok && val.IsRotatorEnabled {
+		now := val.Now
+		if val.IsNextFilter {
 			now = now.Add(rf.cfg.RotatorConfig.Freq)
 		}
-		if rf.cfg.RotatorConfig.Mode == config.RotatorModeTruncatedTime {
+		if val.RotatorMode == config.RotatorModeTruncatedTime {
 			now = now.Truncate(rf.cfg.RotatorConfig.Freq)
 		}
-		return bitmap.NewRedis(ctx, client, fmt.Sprintf("%s_%d", rf.cfg.RedisConfig.Key, now.UnixNano()), rf.cfg.FilterConfig.M, bitmap.RedisSetExpireTTL(rf.cfg.RotatorConfig.Freq*2+RedisGracefulExpireTTL))
+		return bitmap.NewRedis(
+			ctx,
+			client,
+			fmt.Sprintf("%s_%d", rf.cfg.RedisConfig.Key, now.UnixNano()),
+			rf.cfg.FilterConfig.M,
+			bitmap.RedisSetExpireTTL(rf.cfg.RotatorConfig.Freq*2+RedisGracefulExpireTTL),
+		)
 	} else {
 		return bitmap.NewRedis(ctx, client, rf.cfg.RedisConfig.Key, rf.cfg.FilterConfig.M)
 	}
