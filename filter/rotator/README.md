@@ -8,10 +8,10 @@
 ## Rotator Mode
 
 - `default`: perform rotation by `RotatorConfig.Freq`. It's **effective with all bitmaps**.
-    - if rotation is performed when `2022-01-02T03:04:05` and `Freq` is `3h`, the next rotation will
-      be `2022-01-02T06:04:05`.
+    - if rotation is performed when 2022-01-02T03:04:05 and `Freq` is `3h`, the next rotation will
+      be 2022-01-02T06:04:05.
 - `truncated-time`: perform rotation by truncated time and `RotatorConfig.Freq`. It's **only effective
-  with** `bitmap.Redis{}`.
+  with [bitmap.Redis]**.
 - Refer following [Explanation](#Explanation) for more information.
 
 ### Explanation
