@@ -6,7 +6,7 @@ import (
 	"github.com/x0rworld/go-bloomfilter/config"
 	"github.com/x0rworld/go-bloomfilter/core"
 	"github.com/x0rworld/go-bloomfilter/filter"
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -14,12 +14,17 @@ import (
 // It's the same signature with factory.FilterFactory.NewFilter.
 type NewFilterFunc func(ctx context.Context) (filter.Filter, error)
 
+type filterPair struct {
+	current filter.Filter
+	next    filter.Filter
+}
+
 type Rotator struct {
-	ctx           context.Context
-	cfg           config.RotatorConfig
-	mutex         *sync.RWMutex
-	newFilter     NewFilterFunc
-	current, next filter.Filter
+	ctx       context.Context
+	cfg       config.RotatorConfig
+	newFilter NewFilterFunc
+	// type: *filterPair
+	pair atomic.Value
 }
 
 func (r *Rotator) handleRotating(freq time.Duration) {
@@ -37,37 +42,31 @@ func (r *Rotator) handleRotating(freq time.Duration) {
 }
 
 func (r *Rotator) rotate() error {
-	next, err := r.genFilter(true)
+	newFilter, err := r.genFilter(true)
 	if err != nil {
 		return err
 	}
 
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
-	r.current = r.next
-	r.next = next
+	oldPair := r.pair.Load().(*filterPair)
+	newPair := &filterPair{
+		current: oldPair.next,
+		next:    newFilter,
+	}
+	r.pair.Store(newPair)
 	return err
 }
 
 func (r *Rotator) Exist(data string) (bool, error) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
-	return r.current.Exist(data)
+	return r.pair.Load().(*filterPair).current.Exist(data)
 }
 
 func (r *Rotator) Add(data string) error {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
-	err := r.current.Add(data)
+	p := r.pair.Load().(*filterPair)
+	err := p.current.Add(data)
 	if err != nil {
 		return err
 	}
-	return r.next.Add(data)
-}
-
-type filterPair struct {
-	current, next filter.Filter
+	return p.next.Add(data)
 }
 
 func (r *Rotator) genFilter(isNext bool) (filter.Filter, error) {
@@ -106,16 +105,14 @@ func NewRotator(ctx context.Context, cfg config.RotatorConfig, newFilter NewFilt
 	r := &Rotator{
 		ctx:       ctx,
 		cfg:       cfg,
-		mutex:     &sync.RWMutex{},
 		newFilter: newFilter,
 	}
 
-	pair, err := r.genFilterPair()
+	p, err := r.genFilterPair()
 	if err != nil {
 		return nil, err
 	}
-	r.current = pair.current
-	r.next = pair.next
+	r.pair.Store(p)
 
 	go r.handleRotating(cfg.Freq)
 

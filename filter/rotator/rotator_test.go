@@ -28,10 +28,10 @@ func TestRotator_doRotation(t *testing.T) {
 	_ = rotator.rotate()
 
 	// validate data in current and next filter
-	cExist, err := rotator.current.Exist(data)
+	cExist, err := rotator.pair.Load().(*filterPair).current.Exist(data)
 	assert.NoError(t, err)
 	assert.Equal(t, true, cExist)
-	nExist, err := rotator.next.Exist(data)
+	nExist, err := rotator.pair.Load().(*filterPair).next.Exist(data)
 	assert.NoError(t, err)
 	assert.Equal(t, false, nExist)
 }
@@ -46,7 +46,7 @@ func TestRotator_Exist(t *testing.T) {
 
 	// scenario 2: current does have data but next doesn't, expect to get existing
 	rotator = genRotator(t, genDefaultRotatorConfig())
-	err = rotator.current.Add(data)
+	err = rotator.pair.Load().(*filterPair).current.Add(data)
 	assert.NoError(t, err)
 	exist, err = rotator.Exist(data)
 	assert.NoError(t, err)
@@ -54,7 +54,7 @@ func TestRotator_Exist(t *testing.T) {
 
 	// scenario 3: next does have data but current doesn't, expect to get non-existing (this case should not happen)
 	rotator = genRotator(t, genDefaultRotatorConfig())
-	err = rotator.next.Add(data)
+	err = rotator.pair.Load().(*filterPair).next.Add(data)
 	assert.NoError(t, err)
 	exist, err = rotator.Exist(data)
 	assert.NoError(t, err)
@@ -62,9 +62,9 @@ func TestRotator_Exist(t *testing.T) {
 
 	// scenario 4: current & next do have data, expect to get existing
 	rotator = genRotator(t, genDefaultRotatorConfig())
-	err = rotator.current.Add(data)
+	err = rotator.pair.Load().(*filterPair).current.Add(data)
 	assert.NoError(t, err)
-	err = rotator.next.Add(data)
+	err = rotator.pair.Load().(*filterPair).next.Add(data)
 	assert.NoError(t, err)
 	exist, err = rotator.Exist(data)
 	assert.NoError(t, err)
@@ -76,9 +76,9 @@ func TestRotator_Add(t *testing.T) {
 	data := "hello"
 	err := rotator.Add(data)
 	assert.NoError(t, err)
-	cExist, err := rotator.current.Exist(data)
+	cExist, err := rotator.pair.Load().(*filterPair).current.Exist(data)
 	assert.NoError(t, err)
-	nExist, err := rotator.next.Exist(data)
+	nExist, err := rotator.pair.Load().(*filterPair).next.Exist(data)
 	assert.NoError(t, err)
 	assert.Equal(t, true, cExist && nExist)
 }
